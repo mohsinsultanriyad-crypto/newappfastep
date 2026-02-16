@@ -13,6 +13,10 @@ interface AdminDashboardProps {
   setAdvanceRequests: React.Dispatch<React.SetStateAction<AdvanceRequest[]>>;
   announcements: Announcement[];
   setAnnouncements: React.Dispatch<React.SetStateAction<Announcement[]>>;
+  fetchShifts: () => void;
+  fetchLeaves: () => void;
+  fetchAdvanceRequests: () => void;
+  fetchAnnouncements: () => void;
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
@@ -40,16 +44,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return advanceRequests.filter(r => r.status === 'scheduled' && r.paymentDate && r.paymentDate <= todayStr);
   }, [advanceRequests, todayStr]);
 
-  const handleAddAnnouncement = () => {
+  const handleAddAnnouncement = async () => {
     if (!newAnnounce.trim()) return;
+    // Simulate API call, then refetch
     setAnnouncements([{ id: Math.random().toString(36).substr(2, 9), content: newAnnounce, priority: announcePriority, timestamp: Date.now() }, ...announcements]);
     setNewAnnounce('');
     setShowAnnounceModal(false);
+    fetchAnnouncements();
   };
 
   const decideAdvance = (id: string, status: 'approved' | 'rejected' | 'scheduled', date?: string) => {
     setAdvanceRequests(prev => prev.map(r => r.id === id ? { ...r, status, paymentDate: status === 'scheduled' ? date : r.paymentDate } : r));
     setSchedulingReqId(null);
+    fetchAdvanceRequests();
   };
 
   const decideLeave = (id: string, status: 'accepted' | 'rejected' | 'deduction_proposed', amount?: number) => {
@@ -64,6 +71,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }));
     setRejectingLeaveId(null);
     setDeductionAmount('');
+    fetchLeaves();
   };
 
   const approveShift = (id: string) => {
@@ -73,6 +81,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       }
       return s;
     }));
+    fetchShifts();
   };
 
   const getWorker = (id: string) => workers.find(w => w.id === id);

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from './src/api/api';
 import { User, Shift, Leave, SitePost, AdvanceRequest, Announcement } from './types';
 import { MOCK_WORKERS, MOCK_ADMIN } from './constants';
@@ -20,14 +20,58 @@ const App: React.FC = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [language, setLanguage] = useState<Language>('en');
 
+  // --- Resource fetchers ---
+  const fetchShifts = useCallback(async () => {
+    try {
+      const res = await api.get('/shifts');
+      setShifts(res.data);
+    } catch {}
+  }, []);
+  const fetchLeaves = useCallback(async () => {
+    try {
+      const res = await api.get('/leaves');
+      setLeaves(res.data);
+    } catch {}
+  }, []);
+  const fetchPosts = useCallback(async () => {
+    try {
+      const res = await api.get('/posts');
+      setPosts(res.data);
+    } catch {}
+  }, []);
+  const fetchWorkers = useCallback(async () => {
+    try {
+      const res = await api.get('/users');
+      setWorkers(res.data);
+    } catch {}
+  }, []);
+  const fetchAdvanceRequests = useCallback(async () => {
+    try {
+      const res = await api.get('/advances');
+      setAdvanceRequests(res.data);
+    } catch {}
+  }, []);
+  const fetchAnnouncements = useCallback(async () => {
+    try {
+      const res = await api.get('/announcements');
+      setAnnouncements(res.data);
+    } catch {}
+  }, []);
   // Auth: Restore session from localStorage
+  // --- Auth/session restore ---
   useEffect(() => {
+    setAuthLoading(true);
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
     if (savedToken && savedUser) {
       setToken(savedToken);
-      setCurrentUser(JSON.parse(savedUser));
-      // Optionally validate token with backend
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        // Only minimal info in localStorage
+        setCurrentUser({ id: parsedUser.id, role: parsedUser.role, name: parsedUser.name, email: parsedUser.email });
+      } catch {
+        setCurrentUser(null);
+      }
       api.get('/users/me').then(res => {
         setCurrentUser(res.data.user);
         setAuthLoading(false);
@@ -36,15 +80,18 @@ const App: React.FC = () => {
         setAuthLoading(false);
       });
     } else {
+      setCurrentUser(null);
+      setToken(null);
       setAuthLoading(false);
     }
   }, []);
 
   const handleLogin = (user: User, token: string) => {
-    setCurrentUser(user);
+    setCurrentUser({ id: user.id, role: user.role, name: user.name, email: user.email });
     setToken(token);
+    // Only store minimal info
     localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('user', JSON.stringify({ id: user.id, role: user.role, name: user.name, email: user.email }));
   };
 
   const handleLogout = () => {
@@ -52,7 +99,7 @@ const App: React.FC = () => {
     setToken(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.reload();
+    window.location.href = '/login';
   };
 
   if (authLoading) {
@@ -85,6 +132,12 @@ const App: React.FC = () => {
           onLogout={handleLogout}
           language={language}
           setLanguage={setLanguage}
+          fetchShifts={fetchShifts}
+          fetchLeaves={fetchLeaves}
+          fetchPosts={fetchPosts}
+          fetchWorkers={fetchWorkers}
+          fetchAdvanceRequests={fetchAdvanceRequests}
+          fetchAnnouncements={fetchAnnouncements}
         />
       ) : (
         <WorkerApp 
@@ -102,6 +155,11 @@ const App: React.FC = () => {
           onLogout={handleLogout}
           language={language}
           setLanguage={setLanguage}
+          fetchShifts={fetchShifts}
+          fetchLeaves={fetchLeaves}
+          fetchPosts={fetchPosts}
+          fetchAdvanceRequests={fetchAdvanceRequests}
+          fetchAnnouncements={fetchAnnouncements}
         />
       )}
     </div>

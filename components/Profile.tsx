@@ -14,6 +14,8 @@ interface ProfileProps {
   setAdvanceRequests?: React.Dispatch<React.SetStateAction<AdvanceRequest[]>>;
   language?: Language;
   setLanguage?: (lang: Language) => void;
+  fetchLeaves?: () => void;
+  fetchAdvanceRequests?: () => void;
 }
 
 const Profile: React.FC<ProfileProps> = ({ user, onLogout, leaves, setLeaves, advanceRequests, setAdvanceRequests, language = 'en', setLanguage }) => {
@@ -45,9 +47,9 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout, leaves, setLeaves, ad
       reason: finalReason,
       status: 'pending'
     };
-    
     setLeaves(prev => [...prev, newLeave]);
     setIsSuccess(true);
+    if (typeof fetchLeaves === 'function') fetchLeaves();
     setTimeout(() => { 
       setShowLeaveModal(false); 
       setIsSuccess(false); 
@@ -69,6 +71,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout, leaves, setLeaves, ad
     };
     setAdvanceRequests(prev => [...prev, newReq]);
     setIsSuccess(true);
+    if (typeof fetchAdvanceRequests === 'function') fetchAdvanceRequests();
     setTimeout(() => { setShowAdvanceModal(false); setIsSuccess(false); setAdvanceAmount(''); setAdvanceReason(''); }, 1500);
   };
 

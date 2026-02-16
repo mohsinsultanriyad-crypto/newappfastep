@@ -26,6 +26,12 @@ interface AdminAppProps {
   onLogout: () => void;
   language: Language;
   setLanguage: (lang: Language) => void;
+  fetchShifts: () => void;
+  fetchLeaves: () => void;
+  fetchPosts: () => void;
+  fetchWorkers: () => void;
+  fetchAdvanceRequests: () => void;
+  fetchAnnouncements: () => void;
 }
 
 const AdminApp: React.FC<AdminAppProps> = ({ 
@@ -57,6 +63,32 @@ const AdminApp: React.FC<AdminAppProps> = ({
     if (activeTab === 'dashboard') setHasNewAction(false);
   }, [activeTab]);
 
+  // --- Polling and focus refetch ---
+  useEffect(() => {
+    const poll = setInterval(() => {
+      // Only poll on dashboard/workers tabs
+      if (activeTab === 'dashboard' || activeTab === 'workers') {
+        fetchShifts();
+        fetchLeaves();
+        fetchAdvanceRequests();
+        fetchWorkers();
+        fetchAnnouncements();
+      }
+    }, 15000);
+    const onFocus = () => {
+      fetchShifts();
+      fetchLeaves();
+      fetchAdvanceRequests();
+      fetchWorkers();
+      fetchAnnouncements();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearInterval(poll);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [activeTab, fetchShifts, fetchLeaves, fetchAdvanceRequests, fetchWorkers, fetchAnnouncements]);
+
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="flex-1 overflow-y-auto pb-24">
@@ -66,16 +98,20 @@ const AdminApp: React.FC<AdminAppProps> = ({
             leaves={leaves} setLeaves={setLeaves} 
             workers={workers} advanceRequests={advanceRequests} setAdvanceRequests={setAdvanceRequests}
             announcements={announcements} setAnnouncements={setAnnouncements}
+            fetchShifts={fetchShifts}
+            fetchLeaves={fetchLeaves}
+            fetchAdvanceRequests={fetchAdvanceRequests}
+            fetchAnnouncements={fetchAnnouncements}
           />
         )}
         {activeTab === 'workers' && (
-          <AdminWorkerList workers={workers} setWorkers={setWorkers} shifts={shifts} leaves={leaves} advanceRequests={advanceRequests} />
+          <AdminWorkerList workers={workers} setWorkers={setWorkers} shifts={shifts} leaves={leaves} advanceRequests={advanceRequests} fetchWorkers={fetchWorkers} />
         )}
         {activeTab === 'reports' && (
           <AdminMonthlyReport workers={workers} shifts={shifts} leaves={leaves} advanceRequests={advanceRequests} />
         )}
         {activeTab === 'feed' && (
-          <SiteFeed user={user} posts={posts} setPosts={setPosts} language={language} />
+          <SiteFeed user={user} posts={posts} setPosts={setPosts} language={language} fetchPosts={fetchPosts} />
         )}
         {activeTab === 'profile' && (
           <Profile user={user} onLogout={onLogout} language={language} setLanguage={setLanguage} />

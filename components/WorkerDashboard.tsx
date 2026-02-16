@@ -15,6 +15,10 @@ interface WorkerDashboardProps {
   workers: User[];
   viewMode?: 'dashboard' | 'approvals';
   language?: Language;
+  fetchShifts: () => void;
+  fetchLeaves: () => void;
+  fetchAdvanceRequests: () => void;
+  fetchAnnouncements: () => void;
 }
 
 const WorkerDashboard: React.FC<WorkerDashboardProps> = ({ user, shifts, setShifts, leaves, announcements, advanceRequests, workers, viewMode = 'dashboard', language = 'en' }) => {
@@ -129,6 +133,7 @@ const WorkerDashboard: React.FC<WorkerDashboardProps> = ({ user, shifts, setShif
       return [...filtered, newShift];
     });
     setIsEditing(false);
+    fetchShifts();
   };
 
   const handleSupervisorDecision = (shiftId: string, decision: 'approved' | 'rejected') => {
@@ -165,6 +170,7 @@ const WorkerDashboard: React.FC<WorkerDashboardProps> = ({ user, shifts, setShif
       delete n[shiftId];
       return n;
     });
+    fetchShifts();
   };
 
   const stats = useMemo(() => {

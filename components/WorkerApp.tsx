@@ -23,6 +23,11 @@ interface WorkerAppProps {
   onLogout: () => void;
   language: Language;
   setLanguage: (lang: Language) => void;
+  fetchShifts: () => void;
+  fetchLeaves: () => void;
+  fetchPosts: () => void;
+  fetchAdvanceRequests: () => void;
+  fetchAnnouncements: () => void;
 }
 
 const WorkerApp: React.FC<WorkerAppProps> = ({ 
@@ -77,6 +82,29 @@ const WorkerApp: React.FC<WorkerAppProps> = ({
     }
   }, [activeTab]);
 
+  // --- Polling and focus refetch ---
+  useEffect(() => {
+    const poll = setInterval(() => {
+      if (activeTab === 'dashboard' || activeTab === 'approvals' || activeTab === 'history') {
+        fetchShifts();
+        fetchLeaves();
+        fetchAdvanceRequests();
+        fetchAnnouncements();
+      }
+    }, 15000);
+    const onFocus = () => {
+      fetchShifts();
+      fetchLeaves();
+      fetchAdvanceRequests();
+      fetchAnnouncements();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearInterval(poll);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [activeTab, fetchShifts, fetchLeaves, fetchAdvanceRequests, fetchAnnouncements]);
+
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="flex-1 overflow-y-auto pb-24">
@@ -90,6 +118,10 @@ const WorkerApp: React.FC<WorkerAppProps> = ({
             announcements={announcements}
             workers={workers}
             language={language}
+            fetchShifts={fetchShifts}
+            fetchLeaves={fetchLeaves}
+            fetchAdvanceRequests={fetchAdvanceRequests}
+            fetchAnnouncements={fetchAnnouncements}
           />
         )}
         {activeTab === 'approvals' && user.role === 'supervisor' && (
@@ -103,6 +135,10 @@ const WorkerApp: React.FC<WorkerAppProps> = ({
             workers={workers}
             viewMode="approvals"
             language={language}
+            fetchShifts={fetchShifts}
+            fetchLeaves={fetchLeaves}
+            fetchAdvanceRequests={fetchAdvanceRequests}
+            fetchAnnouncements={fetchAnnouncements}
           />
         )}
         {activeTab === 'history' && (
@@ -116,7 +152,7 @@ const WorkerApp: React.FC<WorkerAppProps> = ({
           />
         )}
         {activeTab === 'feed' && (
-          <SiteFeed user={user} posts={posts} setPosts={setPosts} language={language} />
+          <SiteFeed user={user} posts={posts} setPosts={setPosts} language={language} fetchPosts={fetchPosts} />
         )}
         {activeTab === 'profile' && (
           <Profile 

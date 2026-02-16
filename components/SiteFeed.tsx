@@ -10,6 +10,7 @@ interface SiteFeedProps {
   posts: SitePost[];
   setPosts: React.Dispatch<React.SetStateAction<SitePost[]>>;
   language?: Language;
+  fetchPosts: () => void;
 }
 
 const SiteFeed: React.FC<SiteFeedProps> = ({ user, posts, setPosts, language = 'en' }) => {
@@ -32,6 +33,7 @@ const SiteFeed: React.FC<SiteFeedProps> = ({ user, posts, setPosts, language = '
     };
     setPosts([newPost, ...posts]);
     setContent('');
+    fetchPosts();
   };
 
   const startListening = () => {
@@ -84,6 +86,7 @@ const SiteFeed: React.FC<SiteFeedProps> = ({ user, posts, setPosts, language = '
   const handleDeletePost = (postId: string) => {
     setPosts(prev => prev.filter(p => p.id !== postId));
     setPostToDelete(null);
+    fetchPosts();
   };
 
   return (

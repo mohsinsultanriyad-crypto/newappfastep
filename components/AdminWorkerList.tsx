@@ -13,6 +13,7 @@ interface AdminWorkerListProps {
   leaves: Leave[];
   setLeaves?: React.Dispatch<React.SetStateAction<Leave[]>>;
   advanceRequests: AdvanceRequest[];
+  fetchWorkers: () => void;
 }
 
 const AdminWorkerList: React.FC<AdminWorkerListProps> = ({ workers, setWorkers, shifts, leaves, advanceRequests, setLeaves }) => {
@@ -99,10 +100,11 @@ const AdminWorkerList: React.FC<AdminWorkerListProps> = ({ workers, setWorkers, 
     e.preventDefault();
     if (editingWorker) setWorkers(prev => prev.map(w => w.id === editingWorker.id ? editingWorker : w));
     setEditingWorker(null);
+    fetchWorkers();
   };
 
   const handleDeleteWorker = () => {
-    if (workerToDelete) { setWorkers(prev => prev.filter(w => w.id !== workerToDelete.id)); setWorkerToDelete(null); }
+    if (workerToDelete) { setWorkers(prev => prev.filter(w => w.id !== workerToDelete.id)); setWorkerToDelete(null); fetchWorkers(); }
   };
 
   const handleCreateWorker = (e: React.FormEvent) => {
@@ -124,6 +126,7 @@ const AdminWorkerList: React.FC<AdminWorkerListProps> = ({ workers, setWorkers, 
     setWorkers(prev => [...prev, newUser]);
     setShowAddModal(false);
     setNewWorker({ name: '', workerId: '', trade: '', monthlySalary: '', phone: '', password: 'password123', iqamaExpiry: '', passportExpiry: '', role: 'worker' });
+    fetchWorkers();
   };
 
   return (
