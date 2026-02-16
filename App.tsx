@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import api from './src/api/api';
 import { User, Shift, Leave, SitePost, AdvanceRequest, Announcement } from './types';
 import { MOCK_WORKERS, MOCK_ADMIN } from './constants';
 import WorkerApp from './components/WorkerApp';
@@ -9,57 +10,55 @@ import { Language } from './translations';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [leaves, setLeaves] = useState<Leave[]>([]);
   const [posts, setPosts] = useState<SitePost[]>([]);
   const [workers, setWorkers] = useState<User[]>(MOCK_WORKERS);
   const [advanceRequests, setAdvanceRequests] = useState<AdvanceRequest[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
   const [language, setLanguage] = useState<Language>('en');
 
-  // Persistence: Load
+  // Auth: Restore session from localStorage
   useEffect(() => {
-    const savedShifts = localStorage.getItem('fw_shifts');
-    const savedLeaves = localStorage.getItem('fw_leaves');
-    const savedPosts = localStorage.getItem('fw_posts');
-    const savedWorkers = localStorage.getItem('fw_workers');
-    const savedAdvance = localStorage.getItem('fw_advance');
-    const savedAnnouncements = localStorage.getItem('fw_announcements');
-    const savedLang = localStorage.getItem('fw_lang');
-    
-    if (savedShifts) setShifts(JSON.parse(savedShifts));
-    if (savedLeaves) setLeaves(JSON.parse(savedLeaves));
-    if (savedPosts) setPosts(JSON.parse(savedPosts));
-    if (savedWorkers) setWorkers(JSON.parse(savedWorkers));
-    if (savedAdvance) setAdvanceRequests(JSON.parse(savedAdvance));
-    if (savedAnnouncements) setAnnouncements(JSON.parse(savedAnnouncements));
-    if (savedLang) setLanguage(savedLang as Language);
-    
-    setIsLoaded(true);
+    const savedToken = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
+    if (savedToken && savedUser) {
+      setToken(savedToken);
+      setCurrentUser(JSON.parse(savedUser));
+      // Optionally validate token with backend
+      api.get('/users/me').then(res => {
+        setCurrentUser(res.data.user);
+        setAuthLoading(false);
+      }).catch(() => {
+        handleLogout();
+        setAuthLoading(false);
+      });
+    } else {
+      setAuthLoading(false);
+    }
   }, []);
 
-  // Persistence: Save
-  useEffect(() => {
-    if (!isLoaded) return;
-    localStorage.setItem('fw_shifts', JSON.stringify(shifts));
-    localStorage.setItem('fw_leaves', JSON.stringify(leaves));
-    localStorage.setItem('fw_posts', JSON.stringify(posts));
-    localStorage.setItem('fw_workers', JSON.stringify(workers));
-    localStorage.setItem('fw_advance', JSON.stringify(advanceRequests));
-    localStorage.setItem('fw_announcements', JSON.stringify(announcements));
-    localStorage.setItem('fw_lang', language);
-  }, [isLoaded, shifts, leaves, posts, workers, advanceRequests, announcements, language]);
-
-  const handleLogin = (user: User) => {
+  const handleLogin = (user: User, token: string) => {
     setCurrentUser(user);
+    setToken(token);
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setToken(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.reload();
   };
 
-  if (!currentUser) {
+  if (authLoading) {
+    return <div className="min-h-screen flex items-center justify-center text-lg font-bold">Loading...</div>;
+  }
+  if (!token || !currentUser) {
     return <Login onLogin={handleLogin} workers={workers} />;
   }
 
