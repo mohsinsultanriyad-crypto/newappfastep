@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { User, Shift, Leave, SitePost, AdvanceRequest, Announcement } from '../types';
 import WorkerDashboard from './WorkerDashboard';
 import WorkerHistory from './WorkerHistory';
@@ -83,8 +84,18 @@ const WorkerApp: React.FC<WorkerAppProps> = ({
   }, [activeTab]);
 
   // --- Polling and focus refetch ---
+  // --- Polling and focus refetch with guards ---
+  const location = typeof window !== 'undefined' ? window.location : { pathname: '' };
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    const authLoading = false; // TODO: pass as prop if needed
+    if (!token) return;
+    if (authLoading) return;
+    if (location.pathname === '/login') return;
     const poll = setInterval(() => {
+      if (!token) return;
+      if (authLoading) return;
+      if (location.pathname === '/login') return;
       if (activeTab === 'dashboard' || activeTab === 'approvals' || activeTab === 'history') {
         fetchShifts();
         fetchLeaves();
@@ -93,6 +104,9 @@ const WorkerApp: React.FC<WorkerAppProps> = ({
       }
     }, 15000);
     const onFocus = () => {
+      if (!token) return;
+      if (authLoading) return;
+      if (location.pathname === '/login') return;
       fetchShifts();
       fetchLeaves();
       fetchAdvanceRequests();
@@ -103,7 +117,7 @@ const WorkerApp: React.FC<WorkerAppProps> = ({
       clearInterval(poll);
       window.removeEventListener('focus', onFocus);
     };
-  }, [activeTab, fetchShifts, fetchLeaves, fetchAdvanceRequests, fetchAnnouncements]);
+  }, [activeTab, fetchShifts, fetchLeaves, fetchAdvanceRequests, fetchAnnouncements, location.pathname]);
 
   return (
     <div className="flex flex-col h-full bg-white">

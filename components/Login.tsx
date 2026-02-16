@@ -18,11 +18,18 @@ const Login: React.FC<LoginProps> = ({ onLogin, workers }) => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    // Ensure values are not empty
+    if (!userId || !password) {
+      setError('Please enter both email and password.');
+      return;
+    }
+    const payload = {
+      email: userId,
+      password,
+    };
+    console.log('login payload', payload);
     try {
-      const res = await api.post('/login', {
-        email: userId,
-        password,
-      });
+      const res = await api.post('/login', payload);
       const { token, user } = res.data;
       onLogin(user, token);
     } catch (err: any) {

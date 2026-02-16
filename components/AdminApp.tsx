@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { User, Shift, Leave, SitePost, AdvanceRequest, Announcement } from '../types';
 import AdminDashboard from './AdminDashboard';
 import AdminWorkerList from './AdminWorkerList';
@@ -64,9 +65,18 @@ const AdminApp: React.FC<AdminAppProps> = ({
   }, [activeTab]);
 
   // --- Polling and focus refetch ---
+  // --- Polling and focus refetch with guards ---
+  const location = typeof window !== 'undefined' ? window.location : { pathname: '' };
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    const authLoading = false; // TODO: pass as prop if needed
+    if (!token) return;
+    if (authLoading) return;
+    if (location.pathname === '/login') return;
     const poll = setInterval(() => {
-      // Only poll on dashboard/workers tabs
+      if (!token) return;
+      if (authLoading) return;
+      if (location.pathname === '/login') return;
       if (activeTab === 'dashboard' || activeTab === 'workers') {
         fetchShifts();
         fetchLeaves();
@@ -76,6 +86,9 @@ const AdminApp: React.FC<AdminAppProps> = ({
       }
     }, 15000);
     const onFocus = () => {
+      if (!token) return;
+      if (authLoading) return;
+      if (location.pathname === '/login') return;
       fetchShifts();
       fetchLeaves();
       fetchAdvanceRequests();
@@ -87,7 +100,7 @@ const AdminApp: React.FC<AdminAppProps> = ({
       clearInterval(poll);
       window.removeEventListener('focus', onFocus);
     };
-  }, [activeTab, fetchShifts, fetchLeaves, fetchAdvanceRequests, fetchWorkers, fetchAnnouncements]);
+  }, [activeTab, fetchShifts, fetchLeaves, fetchAdvanceRequests, fetchWorkers, fetchAnnouncements, location.pathname]);
 
   return (
     <div className="flex flex-col h-full bg-white">
